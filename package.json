@@ -1,0 +1,24 @@
+{
+  "name": "kosta-chatbot-test",
+  "version": "1.0.0",
+  "description": "Gemini API를 사용한 챗봇 애플리케이션",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest"
+  },
+  "keywords": [
+    "chatbot",
+    "gemini",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.1.3",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+} 
