@@ -74,6 +74,50 @@ class ChatbotServer {
         });
       }
     });
+
+    // 어시스턴트 타입 조회 API
+    this.app.get('/api/assistant/type', (req, res) => {
+      try {
+        const assistantType = this.geminiService.getAssistantType();
+        res.json({ 
+          success: true, 
+          type: assistantType 
+        });
+      } catch (error) {
+        console.error('어시스턴트 타입 조회 오류:', error);
+        res.status(500).json({
+          success: false,
+          error: '어시스턴트 타입 조회 중 오류가 발생했습니다.'
+        });
+      }
+    });
+
+    // 어시스턴트 타입 설정 API
+    this.app.post('/api/assistant/set-type', this.validateAssistantTypeRequest.bind(this), (req, res) => {
+      try {
+        const { type } = req.body;
+        const success = this.geminiService.setAssistantType(type);
+        
+        if (success) {
+          res.json({
+            success: true,
+            message: `어시스턴트 타입이 ${type}으로 변경되었습니다.`,
+            type
+          });
+        } else {
+          res.status(400).json({
+            success: false,
+            error: '유효하지 않은 어시스턴트 타입입니다.'
+          });
+        }
+      } catch (error) {
+        console.error('어시스턴트 타입 설정 오류:', error);
+        res.status(500).json({
+          success: false,
+          error: '어시스턴트 타입 설정 중 오류가 발생했습니다.'
+        });
+      }
+    });
   }
 
   /**
@@ -106,6 +150,35 @@ class ChatbotServer {
       return res.status(400).json({
         success: false,
         error: '메시지는 비어있지 않아야 합니다.'
+      });
+    }
+    
+    // 다음 미들웨어 실행
+    next();
+  }
+
+  /**
+   * 어시스턴트 타입 요청 검증
+   * @param {Object} req - 요청 객체
+   * @param {Object} res - 응답 객체
+   * @param {Function} next - 다음 미들웨어 함수
+   */
+  validateAssistantTypeRequest(req, res, next) {
+    const { type } = req.body;
+    
+    // 타입 필드 검증
+    if (!type) {
+      return res.status(400).json({
+        success: false,
+        error: 'type 필드가 필요합니다.'
+      });
+    }
+    
+    // 타입 형식 검증
+    if (typeof type !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'type은 문자열이어야 합니다.'
       });
     }
     

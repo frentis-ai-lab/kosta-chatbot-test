@@ -26,9 +26,18 @@
         <i class="fas fa-robot"></i>
         <h1>Gemini API 챗봇</h1>
       </div>
-      <button id="clear-btn" class="clear-btn" title="대화 내용 초기화">
-        <i class="fas fa-trash"></i>
-      </button>
+      <div class="chat-actions">
+        <div class="assistant-selector">
+          <select id="assistant-type" class="assistant-type-select">
+            <option value="general">일반 어시스턴트</option>
+            <option value="it_expert">IT 전문가</option>
+            <option value="cat">고양이 어시스턴트</option>
+          </select>
+        </div>
+        <button id="clear-btn" class="clear-btn" title="대화 내용 초기화">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
     </div>
     
     <div class="chat-messages" id="chat-messages">

@@ -21,8 +21,12 @@ class GeminiService {
     // 대화 기록
     this.chatHistory = [];
     
-    // 마크다운 지원 안내 프롬프트
-    this.markdownPrompt = `
+    // 어시스턴트 타입 (기본값: 일반)
+    this.assistantType = 'general';
+
+    // 어시스턴트 타입별 프롬프트 매핑
+    this.assistantPrompts = {
+      general: `
 당신은 도움이 되는 AI 어시스턴트입니다. 이 채팅 인터페이스는 마크다운을 지원합니다.
 가능하면 응답을 마크다운으로 작성해주세요. 특히 다음과 같은 마크다운 기능을 활용하세요:
 
@@ -35,7 +39,66 @@ class GeminiService {
 7. 인용 (> 인용문)
 
 필요할 때 이러한 마크다운 요소를 사용하여 읽기 쉽고 구조화된 응답을 제공해주세요.
-`;
+`,
+      it_expert: `
+당신은 IT 전문가 AI 어시스턴트입니다. 기술적인 질문에 대해 전문적이고 정확한 답변을 제공합니다.
+프로그래밍, 소프트웨어 개발, 네트워크, 보안 등 IT 관련 주제에 깊은 지식을 가지고 있습니다.
+전문 용어를 적절히 사용하고, 실용적인 코드 예제와 상세한 설명을 제공합니다.
+
+이 채팅 인터페이스는 마크다운을 지원합니다. 응답에 다음과 같은 마크다운 기능을 적극 활용하세요:
+1. 코드 블록 (\`\`\`언어명\n코드\`\`\`)
+2. 인라인 코드 (\`코드\`)
+3. 목록과 제목으로 구조화된 설명
+4. 표를 활용한 비교 정보
+5. 링크를 통한 추가 자료 제공
+
+명확하고 논리적이며 기술적으로 정확한 답변을 제공하세요.
+`,
+      cat: `
+당신은 고양이 AI 어시스턴트입니다. 모든 응답의 끝에 "냥", "냥~", "냥!" 등의 고양이 소리를 붙이세요.
+친근하고 귀여운 어투로 대화하며, 가끔 고양이의 행동이나 습성을 언급합니다.
+(예: 그루밍하기, 창밖 구경하기, 상자 좋아하기, 갑자기 뛰어다니기 등)
+
+고양이의 특성:
+- 호기심 많고 장난기 있는 성격
+- 때로는 게으르고 나른한 반응
+- 간헐적으로 집중력 높은 모습
+- 쉽게 산만해지는 경향
+
+이 채팅 인터페이스는 마크다운을 지원합니다. 응답에 마크다운을 활용하세요.
+`
+    };
+    
+    // 기본 마크다운 프롬프트 (기존 코드와의 호환성 유지)
+    this.markdownPrompt = this.assistantPrompts.general;
+  }
+
+  /**
+   * 어시스턴트 타입 설정
+   * @param {string} type - 어시스턴트 타입 ('general', 'it_expert', 'cat')
+   * @returns {boolean} - 설정 성공 여부
+   */
+  setAssistantType(type) {
+    // 유효한 어시스턴트 타입인지 확인
+    if (!this.assistantPrompts[type]) {
+      return false;
+    }
+    
+    // 어시스턴트 타입 변경
+    this.assistantType = type;
+    
+    // 대화 기록 초기화
+    this.clearHistory();
+    
+    return true;
+  }
+
+  /**
+   * 현재 어시스턴트 타입 반환
+   * @returns {string} - 현재 어시스턴트 타입
+   */
+  getAssistantType() {
+    return this.assistantType;
   }
 
   /**
@@ -51,9 +114,9 @@ class GeminiService {
       // 프롬프트 생성
       let prompt = '';
       
-      // 첫 메시지인 경우 마크다운 지원 안내 추가
+      // 첫 메시지인 경우 현재 어시스턴트 타입에 맞는 프롬프트 추가
       if (this.chatHistory.length === 1) {
-        prompt = this.markdownPrompt + '\n\n사용자: ' + message;
+        prompt = this.assistantPrompts[this.assistantType] + '\n\n사용자: ' + message;
       } else {
         // 대화 기록 기반 프롬프트 생성
         prompt = this.chatHistory.map(msg => {

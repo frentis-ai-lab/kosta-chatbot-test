@@ -9,10 +9,27 @@ const messageInput = document.getElementById('message-input');
 const chatMessages = document.getElementById('chat-messages');
 const clearBtn = document.getElementById('clear-btn');
 const statusMessage = document.getElementById('status-message');
+const assistantTypeSelect = document.getElementById('assistant-type');
 
 // 설정 값
 const API_URL = '/api/chat';
 const CLEAR_API_URL = '/api/chat/clear';
+const ASSISTANT_TYPE_URL = '/api/assistant/type';
+const SET_ASSISTANT_TYPE_URL = '/api/assistant/set-type';
+
+// 어시스턴트 타입 아이콘 매핑
+const assistantTypeIcons = {
+  general: 'fas fa-robot',
+  it_expert: 'fas fa-laptop-code',
+  cat: 'fas fa-cat'
+};
+
+// 어시스턴트 타입별 환영 메시지
+const welcomeMessages = {
+  general: '안녕하세요! Gemini API 챗봇입니다. 무엇을 도와드릴까요?',
+  it_expert: '안녕하세요! IT 전문가 어시스턴트입니다. 기술 관련 질문이나 프로그래밍 문제에 대해 물어보세요.',
+  cat: '안녕하냥! 고양이 어시스턴트입니다. 무엇을 도와드릴까냥? 🐱'
+};
 
 /**
  * 페이지 로드 시 초기화
@@ -24,6 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // 이벤트 리스너 등록
   chatForm.addEventListener('submit', handleSubmit);
   clearBtn.addEventListener('click', clearChat);
+  assistantTypeSelect.addEventListener('change', changeAssistantType);
+  
+  // 현재 어시스턴트 타입 로드
+  loadAssistantType();
   
   // 메시지 입력란에 포커스
   messageInput.focus();
@@ -232,41 +253,146 @@ async function clearChat() {
     
     if (data.success) {
       // 채팅창 초기화
-      chatMessages.innerHTML = `
-        <div class="message bot">
-          <div class="message-content">
-            <p>안녕하세요! Gemini API 챗봇입니다. 무엇을 도와드릴까요?</p>
-            <p>마크다운 형식을 지원합니다. 예를 들어 다음과 같이 입력해보세요:</p>
-            <div class="markdown-content">
-              <pre><code># 제목
-- 항목 1
-- 항목 2
-
-\`\`\`javascript
-console.log('Hello, Markdown!');
-\`\`\`</code></pre>
-            </div>
-          </div>
-        </div>
-      `;
+      chatMessages.innerHTML = '';
       
-      updateStatus('대화 기록이 초기화되었습니다.');
+      // 현재 어시스턴트 타입에 맞는 환영 메시지 추가
+      const assistantType = assistantTypeSelect.value;
+      addInitialMessage(assistantType);
       
-      // 3초 후 상태 메시지 제거
+      updateStatus('대화 내용이 초기화되었습니다.');
+      
+      // 잠시 후 상태 메시지 제거
       setTimeout(() => {
         updateStatus('');
       }, 3000);
     } else {
-      throw new Error(data.error || '초기화 실패');
+      throw new Error(data.error || '채팅 초기화 실패');
     }
   } catch (error) {
-    console.error('대화 기록 초기화 오류:', error);
-    updateStatus('대화 기록 초기화 중 오류가 발생했습니다.');
+    console.error('채팅 초기화 오류:', error);
+    updateStatus('채팅 초기화 중 오류가 발생했습니다.');
   }
 }
 
 /**
- * 스크롤을 채팅창 최하단으로 이동
+ * 어시스턴트 타입 변경
+ */
+async function changeAssistantType() {
+  const newType = assistantTypeSelect.value;
+  
+  try {
+    // 상태 메시지 업데이트
+    updateStatus('어시스턴트 타입 변경 중...');
+    
+    // API 호출
+    const response = await fetch(SET_ASSISTANT_TYPE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ type: newType })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // 채팅창 초기화
+      chatMessages.innerHTML = '';
+      
+      // 어시스턴트 타입에 맞는 환영 메시지 추가
+      addInitialMessage(newType);
+      
+      // 헤더 아이콘 변경
+      updateHeaderIcon(newType);
+      
+      updateStatus(`어시스턴트 타입이 ${getAssistantTypeName(newType)}(으)로 변경되었습니다.`);
+      
+      // 잠시 후 상태 메시지 제거
+      setTimeout(() => {
+        updateStatus('');
+      }, 3000);
+    } else {
+      throw new Error(data.error || '어시스턴트 타입 변경 실패');
+    }
+  } catch (error) {
+    console.error('어시스턴트 타입 변경 오류:', error);
+    updateStatus('어시스턴트 타입 변경 중 오류가 발생했습니다.');
+    
+    // 이전 선택으로 되돌리기
+    loadAssistantType();
+  }
+}
+
+/**
+ * 현재 어시스턴트 타입 로드
+ */
+async function loadAssistantType() {
+  try {
+    const response = await fetch(ASSISTANT_TYPE_URL);
+    const data = await response.json();
+    
+    if (data.success) {
+      // 어시스턴트 타입 설정
+      assistantTypeSelect.value = data.type;
+      
+      // 헤더 아이콘 업데이트
+      updateHeaderIcon(data.type);
+    }
+  } catch (error) {
+    console.error('어시스턴트 타입 로드 오류:', error);
+  }
+}
+
+/**
+ * 헤더 아이콘 업데이트
+ * @param {string} type - 어시스턴트 타입
+ */
+function updateHeaderIcon(type) {
+  const iconElement = document.querySelector('.chat-title i');
+  if (iconElement) {
+    iconElement.className = assistantTypeIcons[type] || 'fas fa-robot';
+  }
+}
+
+/**
+ * 어시스턴트 타입 이름 반환
+ * @param {string} type - 어시스턴트 타입
+ * @returns {string} - 한글 이름
+ */
+function getAssistantTypeName(type) {
+  const names = {
+    general: '일반 어시스턴트',
+    it_expert: 'IT 전문가',
+    cat: '고양이 어시스턴트'
+  };
+  
+  return names[type] || '알 수 없는 어시스턴트';
+}
+
+/**
+ * 초기 환영 메시지 추가
+ * @param {string} type - 어시스턴트 타입
+ */
+function addInitialMessage(type) {
+  const welcomeMessage = welcomeMessages[type] || welcomeMessages.general;
+  
+  const messageElement = document.createElement('div');
+  messageElement.classList.add('message', 'bot');
+  
+  const messageContent = document.createElement('div');
+  messageContent.classList.add('message-content');
+  
+  const paragraph = document.createElement('p');
+  paragraph.textContent = welcomeMessage;
+  
+  messageContent.appendChild(paragraph);
+  messageElement.appendChild(messageContent);
+  
+  chatMessages.appendChild(messageElement);
+}
+
+/**
+ * 스크롤을 최하단으로 이동
  */
 function scrollToBottom() {
   chatMessages.scrollTop = chatMessages.scrollHeight;
