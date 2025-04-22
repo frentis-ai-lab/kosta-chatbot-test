@@ -20,6 +20,22 @@ class GeminiService {
     
     // 대화 기록
     this.chatHistory = [];
+    
+    // 마크다운 지원 안내 프롬프트
+    this.markdownPrompt = `
+당신은 도움이 되는 AI 어시스턴트입니다. 이 채팅 인터페이스는 마크다운을 지원합니다.
+가능하면 응답을 마크다운으로 작성해주세요. 특히 다음과 같은 마크다운 기능을 활용하세요:
+
+1. 제목과 소제목 (# ## ###)
+2. 목록 (- * 1. 2.)
+3. 강조 (**bold**, *italic*)
+4. 링크 [텍스트](URL)
+5. 코드 블록 (\`\`\`코드\`\`\`)
+6. 표 (마크다운 표 형식)
+7. 인용 (> 인용문)
+
+필요할 때 이러한 마크다운 요소를 사용하여 읽기 쉽고 구조화된 응답을 제공해주세요.
+`;
   }
 
   /**
@@ -33,7 +49,18 @@ class GeminiService {
       this.chatHistory.push({ role: 'user', parts: [{ text: message }] });
       
       // 프롬프트 생성
-      const prompt = this.chatHistory.map(msg => msg.parts[0].text).join('\n');
+      let prompt = '';
+      
+      // 첫 메시지인 경우 마크다운 지원 안내 추가
+      if (this.chatHistory.length === 1) {
+        prompt = this.markdownPrompt + '\n\n사용자: ' + message;
+      } else {
+        // 대화 기록 기반 프롬프트 생성
+        prompt = this.chatHistory.map(msg => {
+          const role = msg.role === 'user' ? '사용자' : 'AI';
+          return `${role}: ${msg.parts[0].text}`;
+        }).join('\n');
+      }
       
       // 응답 생성
       const result = await this.model.generateContent(prompt);
