@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini API 챗봇</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- 아이콘 설정 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- 폰트 설정 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="chat-title">
+        <i class="fas fa-robot"></i>
+        <h1>Gemini API 챗봇</h1>
+      </div>
+      <button id="clear-btn" class="clear-btn" title="대화 내용 초기화">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+    
+    <div class="chat-messages" id="chat-messages">
+      <div class="message bot">
+        <div class="message-content">
+          <p>안녕하세요! Gemini API 챗봇입니다. 무엇을 도와드릴까요?</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="chat-input-container">
+      <form id="chat-form">
+        <input 
+          type="text" 
+          id="message-input" 
+          class="message-input" 
+          placeholder="메시지를 입력하세요..." 
+          autocomplete="off"
+          required
+        />
+        <button type="submit" class="send-btn" title="전송">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+    
+    <div class="status-container">
+      <span id="status-message" class="status-message"></span>
+    </div>
+  </div>
+  
+  <script src="js/script.js"></script>
+</body>
+</html> 

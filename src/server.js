@@ -1,0 +1,127 @@
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const path = require('path');
+const GeminiService = require('./geminiService');
+
+/**
+ * 웹 챗봇 서버 클래스
+ * Express를 이용한 웹 서버와 API 엔드포인트 제공
+ */
+class ChatbotServer {
+  constructor() {
+    this.port = process.env.PORT || 3000;
+    this.app = express();
+    this.geminiService = new GeminiService();
+    
+    this.setupMiddleware();
+    this.setupRoutes();
+    this.startServer();
+  }
+
+  /**
+   * 미들웨어 설정
+   */
+  setupMiddleware() {
+    // CORS 설정
+    this.app.use(cors());
+    
+    // JSON 요청 본문 파싱
+    this.app.use(bodyParser.json());
+    
+    // 정적 파일 제공
+    this.app.use(express.static(path.join(__dirname, '../public')));
+  }
+
+  /**
+   * 라우트 설정
+   */
+  setupRoutes() {
+    // 메인 페이지
+    this.app.get('/', (req, res) => {
+      res.sendFile(path.join(__dirname, '../public/index.html'));
+    });
+    
+    // 메시지 전송 API
+    this.app.post('/api/chat', this.validateChatRequest.bind(this), async (req, res) => {
+      try {
+        const { message } = req.body;
+        
+        // Gemini API로 메시지 전송
+        const response = await this.geminiService.sendMessage(message);
+        
+        // 응답 반환
+        res.json({ success: true, response });
+      } catch (error) {
+        console.error('API 오류:', error);
+        res.status(500).json({
+          success: false,
+          error: '메시지 처리 중 오류가 발생했습니다.'
+        });
+      }
+    });
+    
+    // 대화 기록 초기화 API
+    this.app.post('/api/chat/clear', (req, res) => {
+      try {
+        this.geminiService.clearHistory();
+        res.json({ success: true, message: '대화 기록이 초기화되었습니다.' });
+      } catch (error) {
+        console.error('대화 기록 초기화 오류:', error);
+        res.status(500).json({
+          success: false,
+          error: '대화 기록 초기화 중 오류가 발생했습니다.'
+        });
+      }
+    });
+  }
+
+  /**
+   * 채팅 요청 검증
+   * @param {Object} req - 요청 객체
+   * @param {Object} res - 응답 객체
+   * @param {Function} next - 다음 미들웨어 함수
+   */
+  validateChatRequest(req, res, next) {
+    const { message } = req.body;
+    
+    // 메시지 필드 검증
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        error: '메시지 필드가 필요합니다.'
+      });
+    }
+    
+    // 메시지 타입 검증
+    if (typeof message !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: '메시지는 문자열이어야 합니다.'
+      });
+    }
+    
+    // 메시지 길이 검증
+    if (message.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: '메시지는 비어있지 않아야 합니다.'
+      });
+    }
+    
+    // 다음 미들웨어 실행
+    next();
+  }
+
+  /**
+   * 서버 시작
+   */
+  startServer() {
+    this.app.listen(this.port, () => {
+      console.log(`서버가 http://localhost:${this.port} 에서 실행 중입니다.`);
+    });
+  }
+}
+
+// 서버 시작
+new ChatbotServer(); 
